@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-// import { AppPage } from 'e2e/src/app.po';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
+
 
 declare let google: any;
 @Component({
@@ -7,88 +9,61 @@ declare let google: any;
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
+  private subject: Subject<string> = new Subject();
+  @ViewChild('gmap', {static: true}) gmapElement: any;
 
   autocomplete: any;
   formattedAddress: string;
   address: string = '';
-  country:string = '';
-  postal:string = '';
-  landmark:string = '';
+  country: string = '';
+  postal: string = '';
+  landmark: string = '';
   lat = 51.678418;
   lng = 7.809007;
-  query:string = '';
+  query: string = 'India';
   manual = false;
-  currentLocation:any;
- 
+  currentLocation: any;
 
-  constructor() {
+
+
+
+
+  ngOnInit() {
+    
+    this.subject.pipe(debounceTime(700)).subscribe(data => {
+      this.query = data;
+      this.initMap();
+    });
   }
 
-  // handleAddressChange(address: any) {
-
-  //   this.formattedAddress = address.formatted_address;
-  
-
-  //   this.lat = address.geometry.location.lat();
-  //   this.lng = address.geometry.location.lng();
-  //   console.log("address", address);
-
-  // }
-
-
-   mapReadyHandler(e: any){
-
-  //  console.log("map details",e)
-    this.lat = e.coords.lat;
-      this.lng = e.coords.lng;
-      this.manual = true;
-      // this.initMap();
-
-      // let geocoder = new google.maps.Geocoder;  
-      //               let latlng = {  
-      //                   lat: this.lat,  
-      //                   lng: this.lng  
-      //               };  
-      //               geocoder.geocode({  
-      //                   'location': latlng  
-      //               }, (results)=>{  
-      //                   if (results[0]) {  
-      //                       this.currentLocation = results[0].formatted_address;  
-      //                       console.log("this.locs",this.currentLocation);  
-      //                   } else {  
-      //                       console.log('Not found');  
-      //                   }  
-      //                 });
+  ngAfterViewInit(){
+    // this.initializeMap();
   }
 
-
-//New Functionality
-
-map:any;
-service:any;
-infowindow:any;
-
-
-async initMap() {
-  if(!this.manual){
-    const place = new google.maps.LatLng(this.lat, this.lng);
-    // console.log("query", this.query)
-    this.infowindow = new google.maps.InfoWindow();
-    this.map = new google.maps.Map(document.getElementById("map"));
-  
-    const request = {
-      query: this.query,
-      fields: ["name", "geometry"],
+  initializeMap(){
+    const lngLat = new google.maps.LatLng(6.5874964, 3.9886097);
+    const mapOptions = {
+      center: lngLat,
+      zoom: 15,
+      fullscreenControl: false,
+      mapTypeControl: false,
+      streetViewControl: false
     };
-  
+
+
+    this.map = new google.maps.Map(this.gmapElement.nativeElement, mapOptions);
+        const request = {
+        query: this.query,
+        fields: ["name", "geometry"],
+      };
     this.service = new google.maps.places.PlacesService(this.map);
-    await this.service.findPlaceFromQuery(request, (results, status) => {
+    this.service.findPlaceFromQuery(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK) {
-        // for (let i = 0; i < results.length; i++) {
-        //   this.createMarker(results[i]);
-        // }
-        // this.map.setCenter(results[0].geometry.location);
+        for (let i = 0; i < results.length; i++) {
+          this.createMarker(results[i]);
+        }
+        this.map.setCenter(results[0].geometry.location);
         console.log("place details", results[0].geometry.location);
         let loc = results[0].geometry.location;
         this.lat = loc.lat();
@@ -98,100 +73,111 @@ async initMap() {
       }
     });
   }
- 
-
-//  const geocoder = new google.maps.Geocoder();
-// 		geocoder.geocode({
-// 			"address" : 'USA'
-// 		}, function(results, status) {
-// 			if(status == google.maps.GeocoderStatus.OK) {
-// 				// $("#lat").val(results[0].geometry.location.lat().toFixed(6));
-//         // $("#lng").val(results[0].geometry.location.lng().toFixed(6));
-//         console.log("locs", results[0].geometry.location);
-// 			} else {
-// 				alert("Please enter correct place name");
-// 			}
-// 		});
-// 		return false;
-}
-
-// reverseGeocode(){
-//   // function initMap() {
-//     const map = new google.maps.Map(document.getElementById("map"), {
-//       zoom: 8,
-//       center: { lat: 40.731, lng: -73.997 },
-//     });
-//     const geocoder = new google.maps.Geocoder();
-//     const infowindow = new google.maps.InfoWindow();
-//     document.getElementById("submit").addEventListener("click", () => {
-//       geocodeLatLng(geocoder, map, infowindow);
-//     });
-//   // }
-  
-//   // function geocodeLatLng(geocoder, map, infowindow) {
-//   //   const input = document.getElementById("latlng").value;
-//   //   const latlngStr = input.split(",", 2);
-//     const latlng = {
-//       lat: parseFloat(latlngStr[0]),
-//       lng: parseFloat(latlngStr[1]),
-//     };
-//     geocoder.geocode({ location: latlng }, (results, status) => {
-//       if (status === "OK") {
-//         if (results[0]) {
-//           map.setZoom(11);
-//           const marker = new google.maps.Marker({
-//             position: latlng,
-//             map: map,
-//           });
-//           infowindow.setContent(results[0].formatted_address);
-//           infowindow.open(map, marker);
-//         } else {
-//           window.alert("No results found");
-//         }
-//       } else {
-//         window.alert("Geocoder failed due to: " + status);
-//       }
-//     });
-//   // }
-// }
 
 
-ngOnInit() {
-  // this.initMap();
-  // this.reverseGeocode();
-}
+  async mapReadyHandler(e: any) {
+    this.manual = true;
 
-makeQuery(id){
-  console.log("test");
-  console.log("coutry", this.country)
-  let newQuery = '';
-  // switch(id){
-  //   case 1: newQuery = t;
-  //   break;
-  //   case 2: this.query = this.query.concat(this.country);
-  //   break;
-  //   case 3: this.query = this.query.concat(this.postal);
-  //   break;
-  //   case 4: this.query = this.query.concat(this.address)
-     
-  // }
-  // this.query=newQuery;
-  // console.log("address", this.address)
-  this.query = `${this.address},${this.country},${this.postal},${this.landmark}`;
-  console.log("final",this.query);
-  this.initMap();
-}
+    const geocoder = new google.maps.Geocoder();
+    let latlng = {
+      lat: e.coords.lat,
+      lng: e.coords.lng
+    };
 
-//  createMarker(place) {
-//   const marker = new google.maps.Marker({
-//     map:this.map,
-//     position: place.geometry.location,
-//   });
-//   google.maps.event.addListener(marker, "click", () => {
-//     this.infowindow.setContent(place.name);
-//     this.infowindow.open(this.map);
-//   });
-// }
 
- 
+    await geocoder.geocode({
+      'location': latlng
+    }, (results) => {
+      if (results[0]) {
+        this.currentLocation = results[0];
+        console.log("this.locs", this.currentLocation);
+        const address_comp = this.currentLocation.address_components;
+        this.address = address_comp[1].long_name;
+        this.landmark = address_comp[2].long_name;
+        this.country = address_comp[address_comp.length - 2].long_name;
+        this.postal = address_comp[address_comp.length - 1].long_name;
+
+      } else {
+        console.log('Not found');
+      }
+    });
+
+
+    this.lat = e.coords.lat;
+    this.lng = e.coords.lng;
+  }
+
+
+  //New Functionality
+
+  map: any;
+  service: any;
+  infowindow: any;
+
+
+  initMap() {
+    if (!this.manual) {
+      const place = new google.maps.LatLng(this.lat, this.lng);
+      this.infowindow = new google.maps.InfoWindow();
+      this.map = new google.maps.Map(this.gmapElement.nativeElement,{
+        zoom:15,
+        // center: { lat: -33, lng: 151 },
+      });
+
+      const request = {
+        query: this.query,
+        fields: ["name", "geometry"],
+      };
+
+      this.service = new google.maps.places.PlacesService(this.map);
+      this.service.findPlaceFromQuery(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          for (let i = 0; i < results.length; i++) {
+            this.createMarker(results[i]);
+          }
+          this.map.setCenter(results[0].geometry.location);
+          console.log("place details", results[0].geometry.location);
+          let loc = results[0].geometry.location;
+          this.lat = loc.lat();
+          this.lng = loc.lng();
+          console.log("lattitude", loc.lat());
+          console.log("longitude", loc.lng());
+        }
+      });
+    }
+
+  }
+
+
+  moveBus( map, marker ) {
+
+    marker.setPosition( new google.maps.LatLng( 0, 0 ) );
+    map.panTo( new google.maps.LatLng( 0, 0 ) );
+
+};
+
+
+
+
+  makeQuery(id) {
+    console.log("test");
+    console.log("coutry", this.country)
+    const query = `${this.address},${this.country},${this.postal},${this.landmark}`;
+    this.subject.next(query);
+
+  }
+
+   createMarker(place) {
+    const marker = new google.maps.Marker({
+      map:this.map,
+      position: place.geometry.location,
+    });
+
+    google.maps.event.addListener(marker, "click", () => {
+      this.infowindow.setContent(place.name);
+      this.infowindow.open(this.map);
+    });
+  }
+
+
 }

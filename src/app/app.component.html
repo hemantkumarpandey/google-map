@@ -38,13 +38,12 @@
       />
 
      
-</div>
-
-
-  <div id="map">
   </div>
 
+  <div #gmap ></div>
 
-<agm-map [latitude]="lat" [longitude]="lng" (mapClick)="mapReadyHandler($event)">
+
+
+<agm-map [latitude]="lat" [longitude]="lng" (mapClick)="mapReadyHandler($event)" [zoom]="10">
   <agm-marker [latitude]="lat" [longitude]="lng"></agm-marker>
 </agm-map>

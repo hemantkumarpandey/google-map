@@ -1,5 +1,6 @@
 agm-map {
   height: 300px;
+  width:500px
 }
 
 .maps{
@@ -10,6 +11,13 @@ agm-map {
    margin-bottom: 20px;
 }
 
-/* #map {
+.iden{
+  
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#map {
   height: 50%;
-} */
+}
